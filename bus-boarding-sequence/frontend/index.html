@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bus Boarding Sequence</title>
+  <style>
+    body { font-family: Arial; background: #f4f6f9; margin:0; padding:0; display:flex; flex-direction:column; align-items:center; }
+    header { background:#007bff; color:white; padding:1rem; width:100%; text-align:center; }
+    main { margin-top:2rem; width:90%; max-width:800px; background:white; padding:2rem; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+    textarea { width:100%; height:100px; margin-bottom:1rem; padding:0.5rem; }
+    button { background:#007bff; color:white; border:none; padding:0.6rem 1rem; border-radius:5px; cursor:pointer; margin-right:0.5rem; }
+    button:hover { background:#0056b3; }
+    table { width:100%; border-collapse:collapse; margin-top:1.5rem; }
+    th, td { border:1px solid #ddd; padding:0.5rem; text-align:center; }
+    th { background:#007bff; color:white; }
+  </style>
+</head>
+<body>
+  <header><h1>Bus Boarding Sequence Generator</h1></header>
+  <main>
+    <h2>Paste Booking Data</h2>
+    <textarea id="dataInput" placeholder="Booking_ID,Seats&#10;101,A1,B1&#10;120,A20,C2"></textarea><br>
+    <button id="generateBtn">Generate Sequence</button>
+    <div id="output"></div>
+  </main>
+
+  <script>
+document.getElementById("generateBtn").addEventListener("click", async () => {
+  const text = document.getElementById("dataInput").value.trim();
+  if (!text) return alert("Paste booking data first!");
+
+  const lines = text.split("\n").filter(Boolean);
+  const bookings = lines.map(line => {
+    const parts = line.split(",");
+    return { Booking_ID: parts[0].trim(), Seats: parts.slice(1).join(",").trim() };
+  });
+
+  try {
+    // Send data to backend
+    const response = await fetch("http://localhost:5000/api/sequence", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bookings })
+    });
+
+    const sequence = await response.json();
+
+    // Render table
+    let html = `<h3>Boarding Sequence</h3><table><tr><th>Seq</th><th>Booking ID</th><th>Seats</th><th>Max Seat No</th></tr>`;
+    sequence.forEach(item => {
+      html += `<tr><td>${item.seq}</td><td>${item.Booking_ID}</td><td>${item.Seats}</td><td>${item.maxSeat}</td></tr>`;
+    });
+    html += "</table>";
+    document.getElementById("output").innerHTML = html;
+  } catch (err) {
+    console.error("Error:", err);
+    alert("Failed to connect to backend.");
+  }
+});
+</script>
+</body>
+</html>
